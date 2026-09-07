@@ -60,6 +60,9 @@
                                         <option value="real-browser">
                                             HTTP(s) - Browser Engine (Chrome/Chromium) (Beta)
                                         </option>
+					<option value="website-defacement">
+    						Website Defacement
+					</option>
                                     </optgroup>
 
                                     <optgroup :label="$t('monitorTypeSpecial')">
@@ -190,7 +193,8 @@
                                     monitor.type === 'http' ||
                                     monitor.type === 'keyword' ||
                                     monitor.type === 'json-query' ||
-                                    monitor.type === 'real-browser'
+                                    monitor.type === 'real-browser' ||
+				    monitor.type === 'website-defacement'
                                 "
                                 class="my-3"
                             >

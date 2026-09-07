@@ -111,7 +111,8 @@ class UptimeKumaServer {
 
         // Set Monitor Types
         UptimeKumaServer.monitorTypeList["real-browser"] = new RealBrowserMonitorType();
-        UptimeKumaServer.monitorTypeList["tailscale-ping"] = new TailscalePing();
+        UptimeKumaServer.monitorTypeList["website-defacement"] = new WebsiteDefacementMonitorType();
+	UptimeKumaServer.monitorTypeList["tailscale-ping"] = new TailscalePing();
         UptimeKumaServer.monitorTypeList["websocket-upgrade"] = new WebSocketMonitorType();
         UptimeKumaServer.monitorTypeList["dns"] = new DnsMonitorType();
         UptimeKumaServer.monitorTypeList["postgres"] = new PostgresMonitorType();
@@ -566,6 +567,7 @@ module.exports = {
 
 // Must be at the end to avoid circular dependencies
 const { RealBrowserMonitorType } = require("./monitor-types/real-browser-monitor-type");
+const { WebsiteDefacementMonitorType } = require("./monitor-types/website-defacement-monitor-type");
 const { TailscalePing } = require("./monitor-types/tailscale-ping");
 const { WebSocketMonitorType } = require("./monitor-types/websocket-upgrade");
 const { DnsMonitorType } = require("./monitor-types/dns");
