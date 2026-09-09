@@ -140,6 +140,70 @@ async function getRdapDomainExpiryDate(domain) {
 }
 
 /**
+ * Request Registrar.AM API to retrieve expiry date of a .am domain
+ * @param {string} domain Domain to retrieve the expiry date from
+ * @returns {Promise<(Date|null)>} Expiry date
+ */
+async function getAmDomainExpiryDate(domain) {
+    const url = `https://whois.registrar.am/api.php?domain=${encodeURIComponent(domain)}`;
+
+    try {
+        log.debug("domain_expiry", `Requesting Registrar.AM expiry data for ${domain}`);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            log.warn(
+                "domain_expiry",
+                `Registrar.AM returned HTTP ${response.status} for ${domain}`
+            );
+            return null;
+        }
+
+        const data = await response.json();
+
+        if (data.status !== "success") {
+            log.warn(
+                "domain_expiry",
+                `Registrar.AM returned unsuccessful status for ${domain}`
+            );
+            return null;
+        }
+
+        if (!data.expiry_date) {
+            log.warn(
+                "domain_expiry",
+                `Registrar.AM response has no expiry_date for ${domain}`
+            );
+            return null;
+        }
+
+        const expiryDate = new Date(`${data.expiry_date}T00:00:00Z`);
+
+        if (Number.isNaN(expiryDate.getTime())) {
+            log.warn(
+                "domain_expiry",
+                `Invalid Registrar.AM expiry date for ${domain}: ${data.expiry_date}`
+            );
+            return null;
+        }
+
+        log.debug(
+            "domain_expiry",
+            `Registrar.AM expiry for ${domain}: ${data.expiry_date}`
+        );
+
+        return expiryDate;
+    } catch (error) {
+        log.warn(
+            "domain_expiry",
+            `Unable to get .am expiry date for ${domain}: ${error.message}`
+        );
+        return null;
+    }
+}
+
+/**
  * Send a certificate notification when domain expires in less than target days
  * @param {string} domain Domain we monitor
  * @param {number} daysRemaining Number of days remaining on certificate
@@ -231,17 +295,22 @@ class DomainExpiry extends BeanModel {
 
         const publicSuffix = tld.publicSuffix;
         const rootTld = publicSuffix.split(".").pop();
-        const rdap = await getRdapServer(publicSuffix);
-        if (!rdap) {
-            throw new TranslatableError("domain_expiry_unsupported_unsupported_tld_no_rdap_endpoint", {
-                publicSuffix,
-            });
-        }
-
-        return {
-            domain: tld.domain,
-            tld: rootTld,
-        };
+        // .am domains are supported through Registrar.AM API
+	if (rootTld !== "am") {
+		const rdap = await getRdapServer(publicSuffix);
+		if (!rdap) {
+			throw new TranslatableError(
+				"domain_expiry_unsupported_unsupported_tld_no_rdap_endpoint",
+				{
+					publicSuffix,
+				}
+			);
+		}
+	}
+	return{
+		domain: tld.domain,
+		tld:rootTld,
+	};
     }
 
     /**
@@ -267,6 +336,10 @@ class DomainExpiry extends BeanModel {
      * @returns {Promise<(Date|null)>} Expiry date from RDAP
      */
     async getExpiryDate() {
+	const rootTld = this.tld?.split(".").pop();
+	if (rootTld === "am") {
+        	return getAmDomainExpiryDate(this.domain);
+    	}
         return getRdapDomainExpiryDate(this.domain);
     }
 
